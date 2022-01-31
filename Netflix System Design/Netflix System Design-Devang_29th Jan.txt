@@ -1,0 +1,510 @@
+Date : 29th January 2022
+Mentor: DEVANG SHARMA
+Batch: Tutort Academy
+Agenda : Netflix - High Level Design
+
+-> Scope and Definition- DONE
+-> Consumers of System- DONE
+-> Requirement clarification - DONE
+-> Capacity Analysis 
+-> Adaptive Bitrate Streaming (ABS) at Client - DONE
+-> High Level Design  
+-> Detailed Component Design
+-> API design  - DONE
+-> DB Schema
+-> Business Flow
+-> CDN, Cache, Sharding, Load balancing, Indexing
+-> Bottlenecks and tradeoffs
+
+"Please Type 'Hi' in the Chat Box if you have joined and Can See this Screen".
+"We Will Start immediately After Every one has joined the session"
+
+
+
+
+(1) Scope and Definition
+
+Video Sharing Platform Like Netflix, Youtube, Hotstar, Prime, Dailymotion etc
+
+Upload, View, Share, Rate, Comment, Report.
+
+
+
+
+Diff Youtube and Netflix ?
+
+
+Both: Provides Content
+
+
+Content Creators:
+
+Youtube - Anybody
+Netflix - Production House - BBC etc
+
+
+Meaning in System Design?
+
+Read: Watching Video
+Write: Uploading Video
+
+Youtube: Less Reads/ Write
+Netflix: More Reads/ Write
+
+R/W ratio
+
+Read/Write ratio: 
+How many reads based upon number of writes
+
+
+Eg: 
+
+Upload 2 Videos, Views - 10000
+
+Write: 2
+Read: 10000
+
+R/W = 10000/2 = 5000:1
+
+
+Fraction = a/b
+
+Increase b, Fraction decrease
+
+
+(2) Entities/Consumers of My System:
+
+- Clients (Devices- Laptop, Mac, Mobile, PC, Smart Screen, Smart Watch, Tab)
+- User (Human)
+- Production House (Users who have access to upload video on platform)
+
+
+
+
+
+(3) Requirement clarification 
+
+(A) Functional Requirements
+
+- Upload Video
+- View Video -> Download/Stream
+- Share Video
+- Search Video based upon title/tags
+- Give the stats - Likes/Dislikes, Star, rating, Number of Views
+- Add and View Comment (Youtube)
+- Ability to Support ALL Devices (Imp - Discussion Later)
+
+(B) Non Functional Requirements (AP System)
+
+- Highly Reliable, I upload a video, Data should not be lost
+- No Buffering (Low Latency, High Availability)
+- Increase User Session Time (Low Latency, High Availability)
+- Recommendation Engine (Personalised Videos + Ads)
+
+
+- Increase User Session Time (Low Latency, High Availability)
+
+Reduce Buffering/Low Quality
+
+
+10 Mins Video- 1080p
+
+Until 5 Mins- 1080p, 
+Suddenly drops to 480p for 5 sec
+And Again, It went for 1080p 
+
+
+
+CAP Throrem:
+
+Consistency:
+Availability:
+Partition Tolerance: Distributed Systems- DONE
+
+
+Only 2/3 CAP Properties can exist in a system
+
+
+Two Types of Systems:
+
+CP
+
+Consistency > Availability
+
+All Nodes are consistent with the updates changes
+
+
+Node 1: Master ----> Node 2, Node 3, Node 4
+
+
+Strong Consistency:
+
+The Moment I update Node 1, All Slave Nodes will be updated at same time
+
+
+Eventual Consistency:
+
+The Moment I update Node 1, All Slave Nodes will NOT be updated at same time.
+Eventually, they will be updated
+
+There will be stale data/old data/non-updated data
+
+
+EXAMPLE:
+
+Consistency > Availability
+
+- Payment Systems: CP
+
+User -> Credit 10k from your account A to Account B
+
+A: a.bal - 10K
+B: b.bal + 10K
+
+
+
+Checking Balance: Not Available - Taking time to Get Result
+
+Phonepe/Paytm: 
+
+getbalance(accno) : GET
+
+
+
+
+AP
+
+
+Availability > Consistency
+
+
+Here, We Use Eventual Consistency.
+
+Eventual Consistency:
+
+The Moment I update Node 1, All Slave Nodes will NOT be updated at same time.
+Eventually, they will be updated
+
+There will be stale data/old data/non-updated data
+
+
+
+All Nodes are Available
+
+
+EXAMPLE:
+
+
+- Any Social Media
+- Any Content Platform
+
+
+
+Instagram:
+
+I posted 1  post -> 1 Mn Followers
+
+Will everyone see at same time? - NO
+
+
+Eventually, Everyone will see.
+
+
+
+
+
+(4) Ability to Support ALL Devices (Imp - Discussion Later)
+
+
+
+
+Devices:      Formats:(I)      Dimensions:(J)        Bandwidth:(K)
+
+Mac        		MKV	          4K                High
+Phone           MP4           1080p				Moderate
+1               1              1                 1
+2  				2  			   2 				 2
+3               3  			   3  				 3 
+4  				4   		   4    			 4
+
+
+Bandwidth:
+
+- Strong Bandwidth
+- Moderate Bandwidth
+- Very Low Bandwidth
+
+
+
+Support All Bandwidths
+
+
+Video- FPS (Frames per seconds), Bitrate of Audio
+
+I can adjust FPS, Bitrate --> To Set Quality of a Video (Size of Video)
+
+Compression/Video Encoding:
+
+High Quality (High Size)  ---> Low Quality (Low Size)
+
+
+
+
+Total:
+
+I*J*K Number of Users -> Very Large Number
+
+
+
+
+
+(5) Adaptive Bitrate Streaming (ABS) for Clients
+
+
+
+Clients (Devices- Laptop, Mac, Mobile, PC, Smart Screen, Smart Watch, Tab)
+
+
+
+Laptop _ _ _ _  Server 1 (Netflix)
+
+Mobile _ _ _ _  Server 2 (Youtube)
+
+_: Chunk of Video
+
+
+
+"Plays a Chunk of Video and simultaneouly, request for Next Chunk of Video"
+
+
+
+Playing Chunk 21: Until Now - 1080p
+
+Making Request for Chunk 22 -> Bandwidth Low
+
+Make Request for Lower Quality of Chunk 22 -> 480p
+
+Chunk 22: 480P
+
+Request for Chunk 23 -> Bnadwidth High
+
+Chunk 23: 1080p
+
+
+
+
+(6) System API
+
+- Upload  
+
+Request:
+
+uploadvideo(video titile, video descrption, tags, category, language, metadata, video)
+
+
+Video title: String
+Video Description: String
+Tags: cricket, sachin, india... - string[]
+default labguage: String
+metadata: Location, date, length, user_id
+Video: Stream- Video to be uploaded
+
+
+Repsonse:
+
+HTTP 202 (Request Accepted)
+HTTP 4__ (Request Failed)
+
+Imp: I will get Notification after sucessful Upload
+
+
+
+- Search
+
+
+Request:
+
+searchvideo(search query, pagination, location)
+
+search query: "Devang Sharma" -> String
+pagination: 100 Videos -> 10 Pages- 10 Videos Each
+location: Searching in India, Searching in USA - String
+
+
+Response:
+
+JSON
+{
+list of all videos,
+Views of all videos,
+Thumbnails, 
+Likes, Dislikes 
+}
+
+
+
+- Stream
+
+Request:
+streamVideo(video id, user id, Codec, Resolution)
+
+
+Response:
+Stream (Chunks of Video)
+
+
+
+
+
+
+
+
+
+
+
+
+(7) High Level Design  
+
+(8) Detailed Component Design
+
+- Processing Queue: Each Upload(Write) will be pushed to Encoding,Thumbnail Generatiom, and Storage
+
+- Encoder- To Encode Each Uploaded Video/Compression
+
+- Thumbnail generator: Generate Thumbnails ofr your video
+
+- Video and Thumbnail Storage: Storage
+
+- Video Metadata Storage: Views, Likes, Dislikes, Loaction, owner_id
+
+- User Db: name, Email ID, UUID, Addreses etc
+
+
+
+(9) DB Schema:
+
+SQL vs No SQL
+
+ACID Compliant- SQL DB-> Sharding and Indexing
+
+
+
+
+Video Metadata Storage: SQL
+- Video ID
+- Title
+- Description
+- Size
+- Owner
+- Likes
+- Dislikes (Removed in Youtube)
+- Views
+- Comments
+
+
+User Db: SQL
+- User ID
+- Name
+- Email
+- Addreses
+- Location
+
+
+
+
+(10) IMP: Video and Thumbnail Storage
+
+First:
+Thumbails > Videos
+For Every Video, There is 5 Thumbnails
+
+Second: 
+I watch 1 Video at a time, But Multiple(20) Thumbails at a time
+(1:50)
+
+It makes Sense to Store 
+- Video and Thumbnails separately
+
+
+Read -> More on Thumbnails
+
+
+
+Video:(20/30/40 GB)
+
+Distributed Storgage- HDFS or GlutenFS (Chunks of data -> Not Complete File)
+
+Thumbails:
+Disk -> High latency
+
+"Bigtable" for Thumbnails
+
+
+
+(11) CDN: Content Delivery Network
+
+- Distributed Servers that delivers web content to user (geography, bandwidth)
+
+- CDN used replicated servers
+Server Nearest to you - Serve the Request-> Decrease Latency
+
+Main Server: Delhi 
+
+CDN Server: Mumbai near you
+
+Mumbai:
+
+- CDN Uses Heavy cache (Low Latency)
+
+
+(12) Cache
+
+
+Cache: 
+
+I open Google.com 10 times in a day.
+
+"Google.com" -> cache
+
+
+
+Google.com -> LB -> Server -> LB -> Fetch Request -> Response: SLOWER
+
+
+Google.com -> Cache -> Response: FASTER
+
+
+
+
+
+Intellignet Cache:
+
+80-20 Rule
+
+
+80% of Trafiic because of 20% Content
+
+Put 20% Contnet in cache -> Very Quick results
+
+
+
+
+(14) Ending:
+
+- Learn Anything New -> Post on Linkedin, tag me and tutort acacdemy 
+- Course for System Design
+- Next Masterclass- what you want ?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
