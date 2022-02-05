@@ -1,0 +1,429 @@
+Date : 29th January 2022
+Mentor: DEVANG SHARMA
+Batch: Tutort Academy
+Agenda : INSTAGRAM - High Level Design
+
+-> Scope and Definition- 
+-> Consumers of System- 
+-> Requirement clarification - 
+ 	- Functional
+ 	- Non Functional
+ 	- Out of Scope
+
+-> Relationship between Users as Graph Vertices - Important (Directions and Weight)
+
+-> Capacity Analysis 
+-> High Level Design  
+-> DB Schema
+-> Detailed Component Design
+-> Ranking and News Feed Generation - Infinite Feed - Most Important
+-> API design  
+-> Business Flow
+-> CDN, Cache, Sharding, Load balancing, Indexing
+-> Bottlenecks and tradeoffs
+
+"Please Type 'Hi' in the Chat Box if you have joined and Can See this Screen".
+"We Will Start immediately After Every one has joined the session"
+
+
+
+
+(1) Scope and Definition
+
+Instagram is a social networking service which enables its users to
+upload and share their photos and videos with other users. Instagram
+users can choose to share information either publicly or privately.
+Anything shared publicly can be seen by any other user, whereas
+privately shared content can only be accessed by a specified set of
+people. Instagram also enables its users to share through many other
+social networking platforms, such as Facebook, Twitter, Flickr, and
+Tumblr.
+For the sake of this exercise, we plan to design a simpler version of
+Instagram, where a user can share photos and can also follow other
+users. The ‘News Feed’ for each user will consist of top photos of all the
+people the user follows.
+
+
+
+
+Why Its a Read Heavy Application ?
+- All Social Media
+
+
+R/W ratio
+
+Read/Write ratio: 
+How many reads based upon number of writes
+
+
+Eg: 
+
+Upload 2 Videos, Views - 10000
+
+Write: 2
+Read: 10000
+
+R/W = 10000/2 = 5000:1
+
+
+Fraction = a/b
+
+Increase b, Fraction decrease
+
+
+(2) Entities/Consumers of My System:
+
+- Clients (Devices- Laptop, Mac, Mobile, PC, Smart Screen, Smart Watch, Tab)
+- User (Human)
+- Users who have access to upload photo/video on platform
+
+
+
+
+
+(3) Requirement clarification 
+
+(A) Functional Requirements
+
+- Upload Video
+- View Video -> Download/Stream
+- Share Video
+- Search Video based upon title/tags
+- Give the stats - Likes/Dislikes, Star, rating, Number of Views
+- Add and View Comment (Youtube)
+- Ability to Support ALL Devices (Imp - Discussion Later)
+
+(B) Non Functional Requirements (AP System)
+
+- Highly Reliable, I upload a video, Data should not be lost
+- No Buffering (Low Latency, High Availability)
+- Increase User Session Time (Low Latency, High Availability)
+- Recommendation Engine (Personalised Videos + Ads)
+
+
+- Increase User Session Time (Low Latency, High Availability)
+
+Reduce Buffering/Low Quality
+
+
+10 Mins Video- 1080p
+
+Until 5 Mins- 1080p, 
+Suddenly drops to 480p for 5 sec
+And Again, It went for 1080p 
+
+
+
+CAP Throrem:
+
+Consistency:
+Availability:
+Partition Tolerance: Distributed Systems- DONE
+
+
+Only 2/3 CAP Properties can exist in a system
+
+
+Two Types of Systems:
+
+CP
+
+Consistency > Availability
+
+All Nodes are consistent with the updates changes
+
+
+Node 1: Master ----> Node 2, Node 3, Node 4
+
+
+Strong Consistency:
+
+The Moment I update Node 1, All Slave Nodes will be updated at same time
+
+
+Eventual Consistency:
+
+The Moment I update Node 1, All Slave Nodes will NOT be updated at same time.
+Eventually, they will be updated
+
+There will be stale data/old data/non-updated data
+
+
+EXAMPLE:
+
+Consistency > Availability
+
+- Payment Systems: CP
+
+User -> Credit 10k from your account A to Account B
+
+A: a.bal - 10K
+B: b.bal + 10K
+
+
+
+Checking Balance: Not Available - Taking time to Get Result
+
+Phonepe/Paytm: 
+
+getbalance(accno) : GET
+
+
+
+
+AP
+
+
+Availability > Consistency
+
+
+Here, We Use Eventual Consistency.
+
+Eventual Consistency:
+
+The Moment I update Node 1, All Slave Nodes will NOT be updated at same time.
+Eventually, they will be updated
+
+There will be stale data/old data/non-updated data
+
+
+
+All Nodes are Available
+
+
+EXAMPLE:
+
+
+- Any Social Media
+- Any Content Platform
+
+
+
+Instagram:
+
+I posted 1  post -> 1 Mn Followers
+
+Will everyone see at same time? - NO
+
+
+Eventually, Everyone will see.
+
+
+(C) Design Consideration
+
+
+
+
+
+(4) Ability to Support ALL Devices (Imp - Discussion Later)
+
+
+
+
+Devices:      Formats:(I)      Dimensions:(J)        Bandwidth:(K)
+
+Mac        		MKV	          4K                High
+Phone           MP4           1080p				Moderate
+1               1              1                 1
+2  				2  			   2 				 2
+3               3  			   3  				 3 
+4  				4   		   4    			 4
+
+
+Bandwidth:
+
+- Strong Bandwidth
+- Moderate Bandwidth
+- Very Low Bandwidth
+
+
+
+Support All Bandwidths
+
+
+Video- FPS (Frames per seconds), Bitrate of Audio
+
+I can adjust FPS, Bitrate --> To Set Quality of a Video (Size of Video)
+
+Compression/Video Encoding:
+
+High Quality (High Size)  ---> Low Quality (Low Size)
+
+
+
+
+Total:
+
+I*J*K Number of Users -> Very Large Number
+
+
+
+
+
+(5) Capacity Estimation and Constraints
+
+Let’s assume we have 500M total users, with 1M daily active users.
+
+2M new photos every day, 23 new photos every second.
+Average photo file size => 200KB
+Total space required for 1 day of photos
+2M * 200KB => 400 GB
+Total space required for 10 years:
+400GB * 365 (days a year) * 10 (years) ~= 1425TB
+
+
+
+(6) High Level Design
+
+At a high-level, we need to support two scenarios, one to upload photos
+and the other to view/search photos. Our service would need some
+object storage (https://en.wikipedia.org/wiki/Object_storage) servers to
+store photos and also some database servers to store metadata
+information about the photos.
+
+
+(7) DB Schema
+
+
+
+(8) Ranking and News Feed Generation - IMP
+
+fetch the latest,
+most popular and relevant photos of the people the user follows.
+
+ A possible problem
+with this approach would be higher latency as we have to query
+multiple tables and perform sorting/merging/ranking on the results. To
+improve the efficiency, we can pre-generate the News Feed and store it
+in a separate table.
+
+Solution:
+
+Pre-generating the News Feed:
+
+
+What are the different approaches for sending News Feed contents
+to the users?
+
+- Push
+- Pull
+- Hybrid
+
+
+User Segregation:
+
+(1) Influencers/Celebrity
+(2) Normal People
+(3) Inactive Accounts - Soft Deleted
+
+
+
+
+
+
+
+
+
+
+
+(9) IMP: Video and Image Storage
+
+First:
+Thumbails > Videos
+For Every Video, There is 5 Thumbnails
+
+Second: 
+I watch 1 Video at a time, But Multiple(20) Thumbails at a time
+(1:50)
+
+It makes Sense to Store 
+- Video and Thumbnails separately
+
+
+Read -> More on Thumbnails
+
+
+
+Video:(20/30/40 GB)
+
+Distributed Storgage- HDFS or GlutenFS (Chunks of data -> Not Complete File)
+
+Thumbails:
+Disk -> High latency
+
+"Bigtable" for Thumbnails
+
+
+
+(10) CDN: Content Delivery Network
+
+- Distributed Servers that delivers web content to user (geography, bandwidth)
+
+- CDN used replicated servers
+Server Nearest to you - Serve the Request-> Decrease Latency
+
+Main Server: Delhi 
+
+CDN Server: Mumbai near you
+
+Mumbai:
+
+- CDN Uses Heavy cache (Low Latency)
+
+
+(11) Cache and Load Balancing
+
+
+Cache: 
+
+I open Google.com 10 times in a day.
+
+"Google.com" -> cache
+
+
+
+Google.com -> LB -> Server -> LB -> Fetch Request -> Response: SLOWER
+
+
+Google.com -> Cache -> Response: FASTER
+
+
+
+Our service would need a massive-scale photo delivery system to serve
+the globally distributed users. Our service should push its content closer
+to the user using a large number of geographically distributed photo
+cache servers and use CDNs
+
+
+
+Intellignet Cache:
+
+80-20 Rule
+
+
+80% of Trafiic because of 20% Content
+
+Put 20% Contnet in cache -> Very Quick results
+
+
+
+
+(14) Ending:
+
+- Learn Anything New -> Post on Linkedin, tag me and tutort acacdemy 
+- Course for System Design
+- Next Masterclass- what you want ?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
